@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "534940323927",
+    "project_id": "galleryapp03-8aba2",
+    "storage_bucket": "galleryapp03-8aba2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:534940323927:android:4ee10251a9e36dec9e5312",
+        "android_client_info": {
+          "package_name": "com.ebookfrenzy.galleryapp02"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJ3Yvt-8L8_Nmvi7qDM24twI3ti-3Jw4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,30 @@
+package com.ebookfrenzy.galleryapp02.data.remote.api
+
+
+
+import com.ebookfrenzy.galleryapp02.data.model.Gallery
+import com.ebookfrenzy.galleryapp02.data.model.GalleryMapsModel
+
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
+
+class FirebaseService {
+    private val firestore = FirebaseFirestore.getInstance()
+
+    suspend fun getGalleries(): List<Gallery> {
+        return try {
+            val snapshot = firestore.collection("galleries").get().await()
+            snapshot.documents.mapNotNull { it.toObject(Gallery::class.java) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    suspend fun getGalleryMaps(galleryId: String): GalleryMapsModel? {
+        return try {
+            val snapshot = firestore.collection("galleriesMaps").document(galleryId).get().await()
+            snapshot.toObject(GalleryMapsModel::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
