@@ -13,6 +13,7 @@ sealed class BottomNavItem(var title: String, var icon: ImageVector, var route: 
     object Maps: BottomNavItem("Maps", Icons.Filled.Build,"maps")
     object Room : BottomNavItem("Room", Icons.Filled.List, "room")
     object ScanQr: BottomNavItem("ScanQr", Icons.Filled.FavoriteBorder,"scanqr")
+
     object GalleryMaps: BottomNavItem("GallMaps", Icons.Filled.FavoriteBorder,"galleryMaps")
     object Painting : BottomNavItem("Painting", Icons.Filled.Info, "painting")
 

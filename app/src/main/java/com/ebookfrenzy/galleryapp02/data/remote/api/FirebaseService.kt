@@ -4,6 +4,7 @@ package com.ebookfrenzy.galleryapp02.data.remote.api
 
 import com.ebookfrenzy.galleryapp02.data.model.Gallery
 import com.ebookfrenzy.galleryapp02.data.model.GalleryMapsModel
+import com.ebookfrenzy.galleryapp02.data.model.Painting
 
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -25,6 +26,15 @@ class FirebaseService {
             snapshot.toObject(GalleryMapsModel::class.java)
         } catch (e: Exception) {
             null
+        }
+    }
+
+    suspend fun getPaintings(): List<Painting> {
+        return try {
+            val snapshot = firestore.collection("paintings").get().await()
+            snapshot.documents.mapNotNull { it.toObject(Painting::class.java) }
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 }
