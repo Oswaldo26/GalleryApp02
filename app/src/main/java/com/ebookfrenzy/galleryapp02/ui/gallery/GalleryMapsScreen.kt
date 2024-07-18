@@ -1,8 +1,17 @@
 package com.ebookfrenzy.galleryapp02.ui.gallery
 
+import androidx.activity.compose.ManagedActivityResultLauncher
+
+
+import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.IntOffset
-
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,9 +26,8 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
-
 
 @Composable
 fun GalleryMapsScreen(
@@ -28,6 +36,19 @@ fun GalleryMapsScreen(
 ) {
     val gallery by viewModel.gallery.collectAsState()
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allPermissionsGranted = permissions.entries.all { it.value }
+        if (allPermissionsGranted) {
+            viewModel.startScanning()
+        } else {
+            // Manejar el caso donde los permisos no fueron otorgados
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize().padding(16.dp).onGloballyPositioned { coordinates ->
         screenSize = coordinates.size
@@ -41,7 +62,6 @@ fun GalleryMapsScreen(
                     val roomWidth = 300f  // Ancho de las habitaciones aumentado
                     val roomHeight = 300f  // Altura de las habitaciones aumentada
                     val padding = 45f  // Espacio entre las habitaciones y los bordes
-                    val density = LocalDensity.current
                     val centerX = screenSize.width / 2f  // Centro de la pantalla en X en pixeles
                     val centerY = screenSize.height / 2f  // Centro de la pantalla en Y en pixeles
 
@@ -65,7 +85,10 @@ fun GalleryMapsScreen(
                             modifier = Modifier
                                 .offset { IntOffset(offset.x.toInt(), offset.y.toInt()) }
                                 .size(size.width.dp, size.height.dp)
-                                .clickable { onRoomClick(roomId) }
+                                .clickable {
+                                    requestPermissionsAndStartScanning(activity, requestPermissionLauncher, viewModel)
+                                    onRoomClick(roomId)
+                                }
                         ) {
                             drawRect(
                                 color = Color.LightGray,
@@ -93,5 +116,29 @@ fun GalleryMapsScreen(
         } ?: run {
             Text(text = "Loading...", modifier = Modifier.padding(16.dp))
         }
+    }
+}
+
+private fun requestPermissionsAndStartScanning(
+    activity: Activity?,
+    requestPermissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, @JvmSuppressWildcards Boolean>>,
+    viewModel: GalleryMapsViewModel
+) {
+    val permissions = listOf(
+        Manifest.permission.BLUETOOTH,
+        Manifest.permission.BLUETOOTH_ADMIN,
+        Manifest.permission.BLUETOOTH_SCAN,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+
+    val permissionsToRequest = permissions.filter {
+        ContextCompat.checkSelfPermission(activity!!, it) != PackageManager.PERMISSION_GRANTED
+    }
+
+    if (permissionsToRequest.isNotEmpty()) {
+        requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
+    } else {
+        viewModel.startScanning()
     }
 }
