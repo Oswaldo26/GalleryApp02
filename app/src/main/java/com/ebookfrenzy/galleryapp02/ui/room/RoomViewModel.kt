@@ -48,12 +48,6 @@ class RoomViewModel @Inject constructor(
     }
 
     fun calculateUserPosition(): StateFlow<Offset?> {
-        val knownBeacons: Map<String, Offset> = mapOf(
-            "beacon1" to Offset(100f, 100f), // Coordenadas del beacon 1
-            "beacon2" to Offset(300f, 100f), // Coordenadas del beacon 2
-            "beacon3" to Offset(200f, 300f)  // Coordenadas del beacon 3
-        )
-
         val userPosition = MutableStateFlow<Offset?>(null)
 
         viewModelScope.launch {
@@ -68,25 +62,48 @@ class RoomViewModel @Inject constructor(
                 }
             }
 
-            if (distances.size < 3) return@launch
+            when (distances.size) {
+                1 -> {
+                    // Caso de un solo beacon: usar estimación de proximidad
+                    val (p1, d1, _) = distances[0]
+                    userPosition.value = p1.copy(y = p1.y + d1) // Esto es solo un ejemplo, ajustar según sea necesario
+                }
+                2 -> {
+                    // Caso de dos beacons: intersección de dos círculos
+                    val (p1, d1, _) = distances[0]
+                    val (p2, d2, _) = distances[1]
+                    // Aquí puedes hacer una aproximación en el eje x o y
+                    val x = (p1.x + p2.x) / 2 // Esto es solo un ejemplo, ajustar según sea necesario
+                    val y = (p1.y + p2.y) / 2 // Esto es solo un ejemplo, ajustar según sea necesario
+                    userPosition.value = Offset(x, y)
+                }
+                3 -> {
+                    // Caso de tres beacons: trilateración completa
+                    val (p1, d1, _) = distances[0]
+                    val (p2, d2, _) = distances[1]
+                    val (p3, d3, _) = distances[2]
 
-            // Implementar trilateración simple (esto es solo un ejemplo básico)
-            val (p1, d1, _) = distances[0]
-            val (p2, d2, _) = distances[1]
-            val (p3, d3, _) = distances[2]
+                    val x = calculateTrilaterationX(p1, d1, p2, d2, p3, d3)
+                    val y = calculateTrilaterationY(p1, d1, p2, d2, p3, d3)
 
-            val A = 2 * (p2.x - p1.x)
-            val B = 2 * (p2.y - p1.y)
-            val C = d1.pow(2) - d2.pow(2) - p1.x.pow(2) + p2.x.pow(2) - p1.y.pow(2) + p2.y.pow(2)
-            val D = 2 * (p3.x - p2.x)
-            val E = 2 * (p3.y - p2.y)
-            val F = d2.pow(2) - d3.pow(2) - p2.x.pow(2) + p3.x.pow(2) - p2.y.pow(2) + p3.y.pow(2)
+                    userPosition.value = Offset(x, y)
+                }
+                else -> {
+                    // Caso de más de tres beacons: usar los tres más cercanos
+                    if (distances.size > 3) {
+                        val sortedDistances = distances.sortedBy { it.second }
+                        val (p1, d1, _) = sortedDistances[0]
+                        val (p2, d2, _) = sortedDistances[1]
+                        val (p3, d3, _) = sortedDistances[2]
 
-            val x = (C * E - F * B) / (E * A - B * D)
-            val y = (C * D - A * F) / (B * D - A * E)
+                        val x = calculateTrilaterationX(p1, d1, p2, d2, p3, d3)
+                        val y = calculateTrilaterationY(p1, d1, p2, d2, p3, d3)
 
-            userPosition.value = Offset(x, y)
-            Log.d("RoomViewModel", "Calculated user position: $x, $y")
+                        userPosition.value = Offset(x, y)
+                    }
+                }
+            }
+            Log.d("RoomViewModelPosition", "Calculated user position: ${userPosition.value}")
         }
 
         return userPosition
@@ -104,10 +121,38 @@ class RoomViewModel @Inject constructor(
         }
     }
 
+    private fun calculateTrilaterationX(p1: Offset, d1: Float, p2: Offset, d2: Float, p3: Offset, d3: Float): Float {
+        val A = 2 * (p2.x - p1.x)
+        val B = 2 * (p2.y - p1.y)
+        val C = d1.pow(2) - d2.pow(2) - p1.x.pow(2) + p2.x.pow(2) - p1.y.pow(2) + p2.y.pow(2)
+        val D = 2 * (p3.x - p2.x)
+        val E = 2 * (p3.y - p2.y)
+        val F = d2.pow(2) - d3.pow(2) - p2.x.pow(2) + p3.x.pow(2) - p2.y.pow(2) + p3.y.pow(2)
+
+        return (C * E - F * B) / (E * A - B * D)
+    }
+
+    private fun calculateTrilaterationY(p1: Offset, d1: Float, p2: Offset, d2: Float, p3: Offset, d3: Float): Float {
+        val A = 2 * (p2.x - p1.x)
+        val B = 2 * (p2.y - p1.y)
+        val C = d1.pow(2) - d2.pow(2) - p1.x.pow(2) + p2.x.pow(2) - p1.y.pow(2) + p2.y.pow(2)
+        val D = 2 * (p3.x - p2.x)
+        val E = 2 * (p3.y - p2.y)
+        val F = d2.pow(2) - d3.pow(2) - p2.x.pow(2) + p3.x.pow(2) - p2.y.pow(2) + p3.y.pow(2)
+
+        return (C * D - A * F) / (B * D - A * E)
+    }
+
     fun getRoomById(galleryId: String, roomId: String) {
         viewModelScope.launch {
             val gallery = repository.fetchGallery(galleryId)
             _room.value = gallery?.rooms?.get(roomId)
         }
     }
+
+    private val knownBeacons: Map<String, Offset> = mapOf(
+        "beacon1" to Offset(100f, 100f), // Coordenadas del beacon 1
+        "beacon2" to Offset(300f, 100f), // Coordenadas del beacon 2
+        "beacon3" to Offset(200f, 300f)  // Coordenadas del beacon 3
+    )
 }

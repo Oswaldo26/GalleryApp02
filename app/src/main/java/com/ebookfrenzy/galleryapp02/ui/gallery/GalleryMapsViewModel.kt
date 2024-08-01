@@ -43,16 +43,5 @@ class GalleryMapsViewModel @Inject constructor(
         }
     }
 
-    fun startScanning() {
-        Log.d("GalleryMapsViewModel", "Starting beacon scanning")
-        beaconScanner.startScanning {
-            Log.d("GalleryMapsViewModel", "Beacon scan results: $it")
-            _scanResults.value = it
-        }
-    }
 
-    fun stopScanning() {
-        Log.d("GalleryMapsViewModel", "Stopping beacon scanning")
-        beaconScanner.stopScanning()
-    }
 }

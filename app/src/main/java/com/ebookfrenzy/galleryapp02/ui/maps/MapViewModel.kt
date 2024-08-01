@@ -25,6 +25,7 @@ class MapViewModel @Inject constructor(
     // Definir las coordenadas de los dos puntos específicos
     val pointA = LatLng(-16.397772680301617, -71.53749712889858) // Centro cultural de la unsa
     val pointB = LatLng(-16.395819290344026, -71.5333523977673) // Centro cultural peruano norteamericano
+    val pointC = LatLng(-16.39645307741121, -71.53621277241473) // Alianza Francesa de Arequipa
 
     fun fetchLocation() {
         viewModelScope.launch {

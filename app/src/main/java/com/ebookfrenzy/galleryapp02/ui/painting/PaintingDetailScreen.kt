@@ -41,7 +41,7 @@ fun PaintingDetailScreen(paintingId: String, viewModel: PaintingViewModel = hilt
                                     .height(400.dp)
                             )
                             // Agrega aquí más detalles de la pintura si es necesario
-                            Text(text = "Aquí puedes añadir más detalles sobre la pintura.", style = androidx.compose.material.MaterialTheme.typography.body1)
+                           // Text(text = "Aquí puedes añadir más detalles sobre la pintura.", style = androidx.compose.material.MaterialTheme.typography.body1)
                         }
                     } ?: run {
                         Text(text = "Painting not found")

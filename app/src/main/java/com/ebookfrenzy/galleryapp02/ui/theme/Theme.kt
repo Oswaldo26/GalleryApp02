@@ -51,7 +51,7 @@ fun GalleryApp02Theme(
 
     MaterialTheme(
       colorScheme = colorScheme,
-      typography = Typography,
+      typography = CustomTypography,
       content = content
     )
 }

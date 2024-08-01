@@ -71,6 +71,10 @@ fun MapsScreen(viewModel: MapViewModel = hiltViewModel()) {
                             title = "Centro Cultural Peruano Norteamericano"
                         )
                         Marker(
+                            state = com.google.maps.android.compose.MarkerState(position = viewModel.pointC),
+                            title = "Alianza Francesa de Arequipa"
+                        )
+                        Marker(
                             state = com.google.maps.android.compose.MarkerState(position = LatLng(loc.latitude, loc.longitude)),
                             title = "You are here"
                         )

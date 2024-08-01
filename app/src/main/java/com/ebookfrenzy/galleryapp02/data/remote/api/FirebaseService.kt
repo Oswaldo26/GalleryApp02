@@ -37,4 +37,12 @@ class FirebaseService {
             emptyList()
         }
     }
+    suspend fun getPainting(paintingId: String): Painting? {
+        return try {
+            val document = firestore.collection("paintings").document(paintingId).get().await()
+            document.toObject(Painting::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

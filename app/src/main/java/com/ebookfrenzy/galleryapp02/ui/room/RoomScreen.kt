@@ -1,14 +1,12 @@
 package com.ebookfrenzy.galleryapp02.ui.room
 
+
+
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
-
-
-
 import android.Manifest
 import android.app.Activity
-
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,6 +16,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -27,7 +26,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.ebookfrenzy.galleryapp02.ui.gallery.GalleryMapsViewModel
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.toSize
@@ -35,8 +33,17 @@ import androidx.compose.ui.unit.toSize
 @Composable
 fun RoomScreen(
     roomId: String,
-    roomHeight: Dp = 650.dp,
-    viewModel: RoomViewModel = hiltViewModel()
+    roomHeightMeters: Float = 6f, // Altura de la habitación en metros
+    roomWidthMeters: Float = 5f, // Ancho de la habitación en metros
+    viewModel: RoomViewModel = hiltViewModel(),
+    paintingOffsets: List<Pair<Float, Float>> = listOf(
+        0.5f to 1f, // Imagen 1 (izquierda)
+        0.5f to 6f, // Imagen 2 (izquierda)
+        0.5f to 11f, // Imagen 3 (izquierda)
+        6f to 1f, // Imagen 4 (derecha)
+        6f to 6f, // Imagen 5 (derecha)
+        6f to 11f // Imagen 6 (derecha)
+    )
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -55,7 +62,7 @@ fun RoomScreen(
     }
 
     LaunchedEffect(roomId) {
-        viewModel.getRoomById("galleryId1", roomId) // Ajusta el ID de la galería según sea necesario
+        viewModel.getRoomById("galleryId1", roomId)
         requestPermissionsAndStartScanning(activity, requestPermissionLauncher, viewModel)
     }
 
@@ -63,12 +70,12 @@ fun RoomScreen(
     val userPosition by viewModel.calculateUserPosition().collectAsState(initial = null)
 
     room?.let {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
             Text(text = it.name, modifier = Modifier.padding(bottom = 16.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(roomHeight)
+                    .height((roomHeightMeters * 100).dp) // Ajustar altura basada en metros
                     .padding(16.dp)
             ) {
                 var canvasSize by remember { mutableStateOf(IntSize.Zero) }
@@ -76,32 +83,27 @@ fun RoomScreen(
                 Canvas(modifier = Modifier.matchParentSize().onGloballyPositioned { coordinates ->
                     canvasSize = coordinates.size
                 }) {
-                    // Dibujar el rectángulo de la habitación
-                    drawRect(
+                    // Dibujar el rectángulo de la habitación con esquinas redondeadas
+                    drawRoundRect(
                         color = Color.LightGray,
                         size = canvasSize.toSize(),
-                        style = Stroke(width = 2f)
+                        cornerRadius = CornerRadius(16.dp.toPx()),
+                        style = Stroke(width = 8f) // Ajustar el grosor de la línea
                     )
                 }
 
                 // Dibujar las imágenes dentro del rectángulo
-                val circleRadius = 30f
+                val circleRadius = 40f
                 val circleDiameter = circleRadius * 2
-                val circlePadding = 120f
-                val circlePositions = listOf(
-                    Offset(circlePadding, circlePadding),
-                    Offset(canvasSize.width - circleDiameter - circlePadding, circlePadding),
-                    Offset(circlePadding, canvasSize.height - circleDiameter - circlePadding),
-                    Offset(canvasSize.width - circleDiameter - circlePadding, canvasSize.height - circleDiameter - circlePadding)
-                )
 
-                circlePositions.forEachIndexed { index, position ->
+                paintingOffsets.forEachIndexed { index, (offsetX, offsetY) ->
                     if (index < it.imageUrls.size) {
                         val imageUrl = it.imageUrls[index]
                         ImageWithOffset(
                             imageUrl = imageUrl,
-                            position = position,
-                            size = circleDiameter.dp
+                            position = Offset(offsetX * 100, offsetY * 100), // Convertir metros a unidades canvas
+                            size = circleDiameter.dp,
+                            title = it.name // Pasar el nombre de la pintura como título
                         )
                     }
                 }
@@ -112,7 +114,10 @@ fun RoomScreen(
                         drawCircle(
                             color = Color.Red,
                             radius = circleRadius,
-                            center = position
+                            center = Offset(
+                                position.x * canvasSize.width / roomWidthMeters,
+                                position.y * canvasSize.height / roomHeightMeters
+                            )
                         )
                     }
                 }
@@ -124,8 +129,8 @@ fun RoomScreen(
 }
 
 @Composable
-fun ImageWithOffset(imageUrl: String, position: Offset, size: Dp) {
-    Box(
+fun ImageWithOffset(imageUrl: String, position: Offset, size: Dp, title: String) {
+    Column(
         modifier = Modifier
             .offset { IntOffset(position.x.toInt(), position.y.toInt()) }
             .size(size)
@@ -136,6 +141,7 @@ fun ImageWithOffset(imageUrl: String, position: Offset, size: Dp) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.size(size)
         )
+        Text(text = title, modifier = Modifier.padding(top = 8.dp))
     }
 }
 

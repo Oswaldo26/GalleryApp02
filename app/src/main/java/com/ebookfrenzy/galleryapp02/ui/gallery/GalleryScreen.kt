@@ -39,7 +39,7 @@ import com.google.accompanist.pager.rememberPagerState
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalFoundationApi::class, ExperimentalPagerApi::class)
 @Composable
-fun GalleryScreen(viewModel: GalleryViewModel = hiltViewModel(), imageHeight: Dp = 300.dp, imageAlpha: Float = 0.7f) {
+fun GalleryScreen(viewModel: GalleryViewModel = hiltViewModel(), imageHeight: Dp = 300.dp, imageAlpha: Float = 1f) {
     val galleryState = viewModel.galleries.collectAsState()
 
 
@@ -58,13 +58,14 @@ fun GalleryScreen(viewModel: GalleryViewModel = hiltViewModel(), imageHeight: Dp
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxSize() // Asegura que el HorizontalPager ocupe todo el tamaño disponible
-                                    .padding( bottom = 50.dp) // Añade padding superior e inferior
+                                    .padding( bottom = 15.dp) // Añade padding superior e inferior
                             ) { page ->
                                 val gallery = galleryList[page]
                                 Log.d("GalleryScreen", "Loading image from URL: ${gallery.imageUrl}")
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth() // Asegura que la imagen ocupe todo el ancho disponible
+
 
                                 ) {
                                     AsyncImage(
@@ -76,18 +77,7 @@ fun GalleryScreen(viewModel: GalleryViewModel = hiltViewModel(), imageHeight: Dp
                                             .fillMaxSize() // Asegura que la imagen ocupe todo el tamaño disponible
                                             .alpha(imageAlpha) // Ajusta la transparencia de la imagen
                                     )
-                                    Text(
-                                        text = gallery.name,
-                                        style = TextStyle(
-                                            fontSize = 30.sp,
-                                            fontWeight = FontWeight.Bold,
 
-                                            color = Color.White
-                                        ),
-                                        modifier = Modifier
-                                            .align(Alignment.BottomStart) // Posiciona el texto en la parte inferior izquierda
-                                            .padding(16.dp) // Añade padding alrededor del texto
-                                    )
                                 }
                             }
                             HorizontalPagerIndicator(

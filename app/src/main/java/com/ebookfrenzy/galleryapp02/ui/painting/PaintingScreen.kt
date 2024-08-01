@@ -1,10 +1,8 @@
 package com.ebookfrenzy.galleryapp02.ui.painting
 
+
 import android.annotation.SuppressLint
 import com.ebookfrenzy.galleryapp02.data.model.Painting
-
-
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,6 +26,7 @@ import androidx.navigation.NavHostController
 @Composable
 fun PaintingScreen(navController: NavHostController, viewModel: PaintingViewModel = hiltViewModel()) {
     val paintingState = viewModel.paintings.collectAsState()
+    val excludedIds = listOf("paintingId1", "paintingId2", "paintingId3", "paintingId4")
 
     Scaffold {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -35,9 +34,10 @@ fun PaintingScreen(navController: NavHostController, viewModel: PaintingViewMode
                 is Resource.Loading -> CircularProgressIndicator()
                 is Resource.Success -> {
                     paintings.data?.let { paintingList ->
+                        val filteredPaintings = paintingList.filterNot { it.id in excludedIds }
                         Column(modifier = Modifier.padding(top = 16.dp)) { // Añadir padding en la parte superior
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(paintingList) { painting ->
+                                items(filteredPaintings) { painting ->
                                     PaintingItem(painting, navController)
                                 }
                             }

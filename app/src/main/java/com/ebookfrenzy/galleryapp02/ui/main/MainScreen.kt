@@ -7,15 +7,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
+import com.ebookfrenzy.galleryapp02.ui.theme.GalleryApp02Theme
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MuseumApp() {
     val navController = rememberNavController()
-    Scaffold(
-        bottomBar = { BottomNavigationBar(navController) },
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        NavigationHost(navController)
+    GalleryApp02Theme {
+        Scaffold(
+            bottomBar = { BottomNavigationBar(navController) },
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            NavigationHost(navController)
+        }
     }
 }

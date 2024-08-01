@@ -20,4 +20,17 @@ class PaintingRepository @Inject constructor(private val firebaseService: Fireba
             Resource.Error(e.message ?: "An error occurred")
         }
     }
+
+    suspend fun getPaintingById(paintingId: String): Resource<Painting?> {
+        return try {
+            val painting = firebaseService.getPainting(paintingId)
+            if (painting != null) {
+                Resource.Success(painting)
+            } else {
+                Resource.Error("Painting not found")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "An error occurred")
+        }
+    }
 }

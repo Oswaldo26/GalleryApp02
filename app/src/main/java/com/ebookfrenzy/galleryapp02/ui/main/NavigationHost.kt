@@ -10,6 +10,7 @@ import com.ebookfrenzy.galleryapp02.ui.gallery.GalleryScreen
 import com.ebookfrenzy.galleryapp02.ui.maps.MapsScreen
 import com.ebookfrenzy.galleryapp02.ui.painting.PaintingDetailScreen
 import com.ebookfrenzy.galleryapp02.ui.painting.PaintingScreen
+import com.ebookfrenzy.galleryapp02.ui.qr.QrResultScreen
 import com.ebookfrenzy.galleryapp02.ui.room.RoomScreen
 import com.ebookfrenzy.galleryapp02.ui.qr.ScanQrScreen
 
@@ -25,7 +26,7 @@ fun NavigationHost(navController: NavHostController) {
         composable(BottomNavItem.Gallery.route) { GalleryScreen() }
         composable(BottomNavItem.Maps.route){ MapsScreen() }
         composable(BottomNavItem.ScanQr.route){ ScanQrScreen(navController) }
-        composable(BottomNavItem.Room.route) { RoomScreen(roomId = "",roomHeight = 500.dp) }
+        composable(BottomNavItem.Room.route) { RoomScreen(roomId = "") }
         composable("room/{roomId}") { backStackEntry ->
             val roomId = backStackEntry.arguments?.getString("roomId")
             roomId?.let { RoomScreen(roomId = it) }
@@ -36,6 +37,11 @@ fun NavigationHost(navController: NavHostController) {
             paintingId?.let { PaintingDetailScreen(paintingId = it) }
         }
 
-
+        composable("qrResult/{paintingId}") { backStackEntry ->
+            val paintingId = backStackEntry.arguments?.getString("paintingId")
+            paintingId?.let {
+                QrResultScreen(paintingId = it)
+            }
+        }
     }
 }

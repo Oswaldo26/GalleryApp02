@@ -1,15 +1,10 @@
 package com.ebookfrenzy.galleryapp02.ui.qr
 
+
 import android.Manifest
 import android.content.pm.PackageManager
-import android.media.MediaPlayer
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -34,9 +29,6 @@ fun ScanQrScreen(navController: NavController) {
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         )
     }
-    val mediaPlayer = remember { MediaPlayer() }
-    var audioUrl by remember { mutableStateOf<String?>(null) }
-    var message by remember { mutableStateOf("") }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -53,8 +45,8 @@ fun ScanQrScreen(navController: NavController) {
 
     LaunchedEffect(scanResult) {
         if (scanResult.isNotEmpty()) {
-            audioUrl = scanResult // Almacenar el link del audio directamente desde el QR
-           // message = "Link guardado"
+            val paintingId = scanResult.trim()
+            navController.navigate("qrResult/$paintingId")
         }
     }
 
@@ -66,7 +58,6 @@ fun ScanQrScreen(navController: NavController) {
                     override fun barcodeResult(result: BarcodeResult) {
                         if (result.text != scanResult) {
                             scanResult = result.text
-                            audioUrl = null // Reiniciar audioUrl para permitir la animación
                         }
                     }
 
@@ -80,47 +71,15 @@ fun ScanQrScreen(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (scanResult.isNotEmpty()) {
-                   // Text(text = "QR Code: $scanResult")
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                Text(text = message)
-                Spacer(modifier = Modifier.height(16.dp)) // Añadir un espacio fijo entre el mensaje y el botón
-
-                AnimatedVisibility(
-                    visible = audioUrl != null,
-                    enter = fadeIn(animationSpec = tween(durationMillis = 500)),
-                    exit = fadeOut(animationSpec = tween(durationMillis = 500))
-                ) {
-                    if (audioUrl != null) {
-                        Button(onClick = { playAudio(audioUrl!!, mediaPlayer, context) }) {
-                            Text(text = "REPRODUCIR AUDIO QR")
-                        }
-                        Spacer(modifier = Modifier.height(32.dp)) // Espacio adicional debajo del botón
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(3f)) // Empujar el contenido hacia arriba
-
-                // Botón adicional para reproducir un audio específico de Firebase
-                Button(onClick = { playAudio("https://firebasestorage.googleapis.com/v0/b/your-app-id.appspot.com/o/audio1.mp3?alt=media&token=some-token", mediaPlayer, context) }) {
-                    Text(text = "Reproducir Audio Específico")
+                Spacer(modifier = Modifier.weight(3f))
+                Button(onClick = { /* Alguna acción adicional si es necesario */ }) {
+                    Text(text = "Otra Acción")
                 }
             }
         }
     } else {
         Text(text = "Permissions not granted")
-    }
-}
-
-fun playAudio(url: String, mediaPlayer: MediaPlayer, context: android.content.Context) {
-    try {
-        mediaPlayer.reset()
-        mediaPlayer.setDataSource(url)
-        mediaPlayer.setOnPreparedListener {
-            it.start()
-        }
-        mediaPlayer.prepareAsync()
-    } catch (e: Exception) {
-        Toast.makeText(context, "Error playing audio: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }
