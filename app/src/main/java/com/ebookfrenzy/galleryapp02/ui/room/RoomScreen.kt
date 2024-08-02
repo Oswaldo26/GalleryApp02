@@ -1,6 +1,9 @@
 package com.ebookfrenzy.galleryapp02.ui.room
 
 
+import androidx.compose.ui.Alignment
+
+
 
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.ui.layout.ContentScale
@@ -67,11 +70,10 @@ fun RoomScreen(
     }
 
     val room by viewModel.room.collectAsState()
-    val userPosition by viewModel.calculateUserPosition().collectAsState(initial = null)
+    val userPosition by viewModel.userPosition.collectAsState(initial = null)
 
     room?.let {
-        Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-            Text(text = it.name, modifier = Modifier.padding(bottom = 16.dp))
+        Column(modifier = Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,9 +124,13 @@ fun RoomScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = it.name, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Text(text = it.description, modifier = Modifier.align(Alignment.CenterHorizontally))
+
         }
     } ?: run {
-        Text(text = "Room not found", modifier = Modifier.padding(16.dp))
+       // Text(text = "Room not found", modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
     }
 }
 
@@ -141,7 +147,7 @@ fun ImageWithOffset(imageUrl: String, position: Offset, size: Dp, title: String)
             contentScale = ContentScale.Crop,
             modifier = Modifier.size(size)
         )
-        Text(text = title, modifier = Modifier.padding(top = 8.dp))
+        Text(text = title, modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally))
     }
 }
 

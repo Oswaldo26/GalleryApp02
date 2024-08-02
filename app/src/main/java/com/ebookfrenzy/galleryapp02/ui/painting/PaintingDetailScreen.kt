@@ -40,7 +40,10 @@ fun PaintingDetailScreen(paintingId: String, viewModel: PaintingViewModel = hilt
                                     .fillMaxWidth()
                                     .height(400.dp)
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+
                             // Agrega aquí más detalles de la pintura si es necesario
+                            Text(text = painting.description, style = androidx.compose.material.MaterialTheme.typography.body1)
                            // Text(text = "Aquí puedes añadir más detalles sobre la pintura.", style = androidx.compose.material.MaterialTheme.typography.body1)
                         }
                     } ?: run {

@@ -1,7 +1,6 @@
 package com.ebookfrenzy.galleryapp02.ui.room
 
 
-
 import android.app.Application
 import android.bluetooth.le.ScanResult
 import android.util.Log
@@ -14,6 +13,7 @@ import com.ebookfrenzy.galleryapp02.data.repository.GalleryMapsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.pow
@@ -32,12 +32,16 @@ class RoomViewModel @Inject constructor(
     private val _room = MutableStateFlow<RoomModel?>(null)
     val room: StateFlow<RoomModel?> get() = _room
 
+    private val _userPosition = MutableStateFlow<Offset?>(null)
+    val userPosition: StateFlow<Offset?> get() = _userPosition
+
     fun startScanning() {
         viewModelScope.launch {
             Log.d("RoomViewModel", "Starting beacon scanning...")
             beaconScanner.startScanning {
                 _scanResults.value = it
                 Log.d("RoomViewModel", "Beacon scan results: $it")
+                calculateUserPosition()
             }
         }
     }
@@ -47,66 +51,49 @@ class RoomViewModel @Inject constructor(
         beaconScanner.stopScanning()
     }
 
-    fun calculateUserPosition(): StateFlow<Offset?> {
-        val userPosition = MutableStateFlow<Offset?>(null)
+    private fun calculateUserPosition() {
+        val knownBeacons: Map<String, Offset> = mapOf(
+            "beacon1" to Offset(100f, 100f), // Coordenadas del beacon 1
+            "beacon2" to Offset(300f, 100f), // Coordenadas del beacon 2
+            "beacon3" to Offset(200f, 300f)  // Coordenadas del beacon 3
+        )
 
-        viewModelScope.launch {
-            val distances = scanResults.value.mapNotNull { result ->
-                val position = knownBeacons[result.device.address]
-                val txPower = beaconScanner.extractTxPower(result) ?: return@mapNotNull null
-                val distance = calculateDistance(txPower, result.rssi)
-                if (position != null && distance != null) {
-                    Triple(position, distance, result.device.address)
-                } else {
-                    null
-                }
+        val distances = _scanResults.value.mapNotNull { result ->
+            val position = knownBeacons[result.device.address]
+            val txPower = beaconScanner.extractTxPower(result) ?: return@mapNotNull null
+            val distance = calculateDistance(txPower, result.rssi)
+            if (position != null && distance != null) {
+                Triple(position, distance, result.device.address)
+            } else {
+                null
             }
-
-            when (distances.size) {
-                1 -> {
-                    // Caso de un solo beacon: usar estimación de proximidad
-                    val (p1, d1, _) = distances[0]
-                    userPosition.value = p1.copy(y = p1.y + d1) // Esto es solo un ejemplo, ajustar según sea necesario
-                }
-                2 -> {
-                    // Caso de dos beacons: intersección de dos círculos
-                    val (p1, d1, _) = distances[0]
-                    val (p2, d2, _) = distances[1]
-                    // Aquí puedes hacer una aproximación en el eje x o y
-                    val x = (p1.x + p2.x) / 2 // Esto es solo un ejemplo, ajustar según sea necesario
-                    val y = (p1.y + p2.y) / 2 // Esto es solo un ejemplo, ajustar según sea necesario
-                    userPosition.value = Offset(x, y)
-                }
-                3 -> {
-                    // Caso de tres beacons: trilateración completa
-                    val (p1, d1, _) = distances[0]
-                    val (p2, d2, _) = distances[1]
-                    val (p3, d3, _) = distances[2]
-
-                    val x = calculateTrilaterationX(p1, d1, p2, d2, p3, d3)
-                    val y = calculateTrilaterationY(p1, d1, p2, d2, p3, d3)
-
-                    userPosition.value = Offset(x, y)
-                }
-                else -> {
-                    // Caso de más de tres beacons: usar los tres más cercanos
-                    if (distances.size > 3) {
-                        val sortedDistances = distances.sortedBy { it.second }
-                        val (p1, d1, _) = sortedDistances[0]
-                        val (p2, d2, _) = sortedDistances[1]
-                        val (p3, d3, _) = sortedDistances[2]
-
-                        val x = calculateTrilaterationX(p1, d1, p2, d2, p3, d3)
-                        val y = calculateTrilaterationY(p1, d1, p2, d2, p3, d3)
-
-                        userPosition.value = Offset(x, y)
-                    }
-                }
-            }
-            Log.d("RoomViewModelPosition", "Calculated user position: ${userPosition.value}")
         }
 
-        return userPosition
+        if (distances.size < 3) return
+
+        // Implementar trilateración real (esto es solo un ejemplo básico)
+        val (p1, d1, _) = distances[0]
+        val (p2, d2, _) = distances[1]
+        val (p3, d3, _) = distances[2]
+
+        // Coordenadas de los beacons
+        val (x1, y1) = p1
+        val (x2, y2) = p2
+        val (x3, y3) = p3
+
+        // Cálculo de la posición usando trilateración
+        val a = 2 * (x2 - x1)
+        val b = 2 * (y2 - y1)
+        val c = d1.pow(2) - d2.pow(2) - x1.pow(2) + x2.pow(2) - y1.pow(2) + y2.pow(2)
+        val d = 2 * (x3 - x2)
+        val e = 2 * (y3 - y2)
+        val f = d2.pow(2) - d3.pow(2) - x2.pow(2) + x3.pow(2) - y2.pow(2) + y3.pow(2)
+
+        val x = (c * e - f * b) / (e * a - b * d)
+        val y = (c * d - a * f) / (b * d - a * e)
+
+        _userPosition.value = Offset(x, y)
+        Log.d("RoomViewModelPosition", "Calculated user position: $x, $y")
     }
 
     private fun calculateDistance(txPower: Int, rssi: Int): Float? {
@@ -121,38 +108,10 @@ class RoomViewModel @Inject constructor(
         }
     }
 
-    private fun calculateTrilaterationX(p1: Offset, d1: Float, p2: Offset, d2: Float, p3: Offset, d3: Float): Float {
-        val A = 2 * (p2.x - p1.x)
-        val B = 2 * (p2.y - p1.y)
-        val C = d1.pow(2) - d2.pow(2) - p1.x.pow(2) + p2.x.pow(2) - p1.y.pow(2) + p2.y.pow(2)
-        val D = 2 * (p3.x - p2.x)
-        val E = 2 * (p3.y - p2.y)
-        val F = d2.pow(2) - d3.pow(2) - p2.x.pow(2) + p3.x.pow(2) - p2.y.pow(2) + p3.y.pow(2)
-
-        return (C * E - F * B) / (E * A - B * D)
-    }
-
-    private fun calculateTrilaterationY(p1: Offset, d1: Float, p2: Offset, d2: Float, p3: Offset, d3: Float): Float {
-        val A = 2 * (p2.x - p1.x)
-        val B = 2 * (p2.y - p1.y)
-        val C = d1.pow(2) - d2.pow(2) - p1.x.pow(2) + p2.x.pow(2) - p1.y.pow(2) + p2.y.pow(2)
-        val D = 2 * (p3.x - p2.x)
-        val E = 2 * (p3.y - p2.y)
-        val F = d2.pow(2) - d3.pow(2) - p2.x.pow(2) + p3.x.pow(2) - p2.y.pow(2) + p3.y.pow(2)
-
-        return (C * D - A * F) / (B * D - A * E)
-    }
-
     fun getRoomById(galleryId: String, roomId: String) {
         viewModelScope.launch {
             val gallery = repository.fetchGallery(galleryId)
             _room.value = gallery?.rooms?.get(roomId)
         }
     }
-
-    private val knownBeacons: Map<String, Offset> = mapOf(
-        "beacon1" to Offset(100f, 100f), // Coordenadas del beacon 1
-        "beacon2" to Offset(300f, 100f), // Coordenadas del beacon 2
-        "beacon3" to Offset(200f, 300f)  // Coordenadas del beacon 3
-    )
 }

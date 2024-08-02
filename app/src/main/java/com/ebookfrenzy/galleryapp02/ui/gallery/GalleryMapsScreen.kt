@@ -1,25 +1,16 @@
 package com.ebookfrenzy.galleryapp02.ui.gallery
 
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
-
-
-
-import androidx.activity.compose.ManagedActivityResultLauncher
-import android.Manifest
-import android.app.Activity
+import androidx.compose.ui.platform.LocalDensity
 import android.content.Context
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.unit.IntOffset
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -27,12 +18,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Dp
 import com.ebookfrenzy.galleryapp02.R
@@ -41,165 +33,215 @@ import com.ebookfrenzy.galleryapp02.R
 fun GalleryMapsScreen(
     viewModel: GalleryMapsViewModel = hiltViewModel(),
     onRoomClick: (String) -> Unit,
-    topTrackHeight: Dp = 35.dp,
-    topTrackWidth: Dp = 350.dp,
-    topTrackOffsetX: Dp = -10.dp,
-    topTrackOffsetY: Dp = -200.dp,
-    leftTrackWidth: Dp = 35.dp,
-    leftTrackHeight: Dp = 450.dp,
-    leftTrackOffsetX: Dp = -90.dp,
-    leftTrackOffsetY: Dp = -20.dp,
-    plazaRadius: Dp = 50.dp,
-    plazaOffsetX: Dp = 15.dp,
-    plazaOffsetY: Dp = -55.dp,
     roomOffsets: List<Pair<Dp, Dp>> = listOf(
-        -50.dp to -180.dp,
-        80.dp to -180.dp,
-        -50.dp to 30.dp,
-        80.dp to -25.dp
+        0.dp to 0.dp, //Rectangulo1
+        0.dp to 300.dp, //Rectangulo2
+        100.dp to 0.dp, //Rectangulo3
+        250.dp to 0.dp, //Rectangulo4
+        250.dp to 100.dp, //Rectangulo5
+        250.dp to 300.dp //Rectangulo6
     ),
-    roomIconSize: Dp = 72.dp,
-    trackIconSize: Dp = 72.dp,
-    plazaIconSize: Dp = 100.dp
+    roomSizes: List<Pair<Dp, Dp>> = listOf(
+        100.dp to 300.dp,
+        100.dp to 150.dp,
+        150.dp to 100.dp,
+        100.dp to 100.dp,
+        100.dp to 200.dp,
+        100.dp to 150.dp
+    ),
+    nameOffsets: List<Pair<Dp, Dp>> = listOf(
+        -85.dp to -160.dp,
+        -85.dp to -150.dp,
+        -105.dp to -80.dp,
+        -85.dp to -80.dp,
+        -85.dp to 0.dp,
+        -85.dp to -300.dp
+    )
 ) {
     val gallery by viewModel.gallery.collectAsState()
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     val context = LocalContext.current
-    val activity = context as? Activity
+    val density = LocalDensity.current
 
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allPermissionsGranted = permissions.entries.all { it.value }
-        if (allPermissionsGranted) {
-
-        } else {
-            // Manejar el caso donde los permisos no fueron otorgados
-        }
+    // Variables para mover los iconos
+    val iconOffsets = remember {
+        mutableStateListOf(
+            mutableStateOf(Offset(240f, 80f)),
+            mutableStateOf(Offset(650f, 80f)),
+            mutableStateOf(Offset(450f, 240f)),
+            mutableStateOf(Offset(240f, 480f)),
+            mutableStateOf(Offset(100f, 795f)),
+            mutableStateOf(Offset(780f, 250f)),
+            mutableStateOf(Offset(780f, 800f)),
+            mutableStateOf(Offset(650f, 500f))
+        )
     }
 
-    Box(modifier = Modifier.fillMaxSize().padding(16.dp).onGloballyPositioned { coordinates ->
-        screenSize = coordinates.size
-    }) {
+    // Variable para mover la imagen central
+    var centerImageOffset by remember { mutableStateOf(Offset(350f, 500f)) }
+    // Variable para mover el texto vertical
+    var verticalTextOffset by remember { mutableStateOf(Offset(50f, 1300f)) }
+    // Variable para mover la puerta doble
+    var additionalImageOffset by remember { mutableStateOf(Offset(100f, 1350f)) }
+
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)
+        .verticalScroll(rememberScrollState())
+        .onGloballyPositioned { coordinates ->
+            screenSize = coordinates.size
+        }
+    ) {
         gallery?.let { gallery ->
             Column {
                 Text(text = gallery.name, modifier = Modifier.padding(top = 50.dp, bottom = 16.dp))
 
-                // Dibujar el plano de la galería en forma de U
+                // Dibujar el plano de la galería
                 Box(modifier = Modifier.fillMaxSize()) {
-                    val roomWidth = 120f  // Ancho de las habitaciones aumentado
-                    val roomHeight = 120f  // Altura de las habitaciones aumentada
-                    val padding = 45f  // Espacio entre las habitaciones y los bordes
-                    val centerX = screenSize.width / 2f  // Centro de la pantalla en X en pixeles
-                    val centerY = screenSize.height / 2f  // Centro de la pantalla en Y en pixeles
-
-                    val rooms = listOf(
-                        // Parte superior de la U
-                        Offset(centerX - 1.5f * (roomWidth + padding), centerY - roomHeight - padding) to Size(roomWidth, roomHeight), // Room 1
-                        Offset(centerX - 0.5f * (roomWidth + padding), centerY - roomHeight - padding) to Size(roomWidth, roomHeight), // Room 2
-                        Offset(centerX - 1.5f * (roomWidth + padding), centerY) to Size(roomWidth, roomHeight), // Room 4 (arriba a la izquierda)
-                        Offset(centerX - 0.5f * (roomWidth + padding), centerY + roomHeight + padding) to Size(roomWidth, roomHeight)  // Room 3 (debajo de Room 4)
-                    )
+                    val rooms = roomSizes.mapIndexed { index, (width, height) ->
+                        val offset = roomOffsets.getOrNull(index) ?: 0.dp to 0.dp
+                        val size = with(density) { width.toPx() to height.toPx() }
+                        val position = with(density) { offset.first.toPx() to offset.second.toPx() }
+                        Offset(position.first, position.second) to Size(size.first, size.second)
+                    }
 
                     val roomIds = gallery.rooms.keys.toList()
                     rooms.forEachIndexed { index, (offset, size) ->
                         val roomId = roomIds.getOrNull(index) ?: "roomId${index + 1}"
                         val room = gallery.rooms[roomId]
-                        val roomOffset = roomOffsets.getOrNull(index) ?: 0.dp to 0.dp
+                        val nameOffset = nameOffsets.getOrNull(index) ?: 0.dp to 0.dp
 
                         Box(
                             modifier = Modifier
-                                .offset { IntOffset((offset.x + roomOffset.first.toPx()).toInt(), (offset.y + roomOffset.second.toPx()).toInt()) }
+                                .offset {
+                                    IntOffset(
+                                        offset.x.toInt(),
+                                        offset.y.toInt()
+                                    )
+                                }
                                 .size(size.width.dp, size.height.dp)
                                 .clickable {
-                                    requestPermissionsAndStartScanning(activity, requestPermissionLauncher, viewModel)
                                     onRoomClick(roomId)
                                 }
                         ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.room1),
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            Canvas(modifier = Modifier.size(size.width.dp, size.height.dp)) {
+                                drawRect(
+                                    color = Color.Black,
+                                    size = size,
+                                    style = Stroke(width = 1f)
+                                )
+                            }
 
                             room?.let {
-                                Box(modifier = Modifier.padding(8.dp).align(Alignment.Center)) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(8.dp)
+                                        .offset(
+                                            x = with(density) { nameOffset.first.toPx().toDp() },
+                                            y = with(density) { nameOffset.second.toPx().toDp() }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(
                                         text = it.name,
-                                        style = androidx.compose.material.MaterialTheme.typography.body1,
-                                        modifier = Modifier.align(Alignment.Center)
+                                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall
                                     )
                                 }
                             }
                         }
                     }
 
-                    // Añadir la pista en la parte superior
-                    Box(
-                        modifier = Modifier
-                            .offset { IntOffset((centerX - (topTrackWidth.toPx() / 2) + topTrackOffsetX.toPx()).toInt(), (centerY - roomHeight - padding - topTrackHeight.toPx() + topTrackOffsetY.toPx()).toInt()) }
-                            .size(topTrackWidth, topTrackHeight)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.track_icon),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
+                    // Dibujar íconos que se pueden mover
+                    iconOffsets.forEachIndexed { index, iconOffset ->
+                        var iconPosition by remember { iconOffset }
+
+                        Box(
                             modifier = Modifier
-                                .matchParentSize()
-
-                        )
-                        Text(
-                            text = "",
-                            modifier = Modifier.align(Alignment.Center),
-                            style = androidx.compose.material.MaterialTheme.typography.body1
-                        )
-                    }
-
-                    // Añadir la pista en el lado izquierdo
-                    Box(
-                        modifier = Modifier
-                            .offset { IntOffset((centerX - roomWidth - padding - leftTrackWidth.toPx() + leftTrackOffsetX.toPx()).toInt(), (centerY - (leftTrackHeight.toPx() / 2) + leftTrackOffsetY.toPx()).toInt()) }
-                            .size(leftTrackWidth, leftTrackHeight)
-                    ) {
-                        Canvas(modifier = Modifier.matchParentSize()) {
-                            drawRect(
-                                color = Color.Gray,
-                                size = Size(leftTrackWidth.toPx(), leftTrackHeight.toPx()),
-                                style = Stroke(width = 2f)
+                                .offset {
+                                    IntOffset(
+                                        iconPosition.x.toInt(),
+                                        iconPosition.y.toInt()
+                                    )
+                                }
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        iconPosition = iconPosition.copy(
+                                            x = iconPosition.x + dragAmount.x,
+                                            y = iconPosition.y + dragAmount.y
+                                        )
+                                    }
+                                }
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.door),
+                                contentDescription = null,
+                                modifier = Modifier.size(25.dp)
                             )
                         }
-                        Image(
-                            painter = painterResource(id = R.drawable.track_vertical),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxHeight() // Usa todo el alto disponible
-                                .width(leftTrackWidth) // Usa el ancho especificado
+                    }
 
-                        )
-                        Text(
-                            text = "",
-                            modifier = Modifier.align(Alignment.Center),
-                            style = androidx.compose.material.MaterialTheme.typography.body1
+                    // Añadir una imagen en el centro que se puede mover
+                    Box(
+                        modifier = Modifier
+                            .offset { IntOffset(centerImageOffset.x.toInt(), centerImageOffset.y.toInt()) }
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    centerImageOffset = centerImageOffset.copy(
+                                        x = centerImageOffset.x + dragAmount.x,
+                                        y = centerImageOffset.y + dragAmount.y
+                                    )
+                                }
+                            }
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.plaza), // Reemplaza con el id de tu imagen
+                            contentDescription = null,
+                            modifier = Modifier.size(100.dp) // Ajusta el tamaño según sea necesario
                         )
                     }
 
-                    // Añadir la plaza en el centro
+                    // Añadir texto vertical que se puede mover
                     Box(
                         modifier = Modifier
-                            .offset { IntOffset((centerX - plazaRadius.toPx() + plazaOffsetX.toPx()).toInt(), (centerY - plazaRadius.toPx() + plazaOffsetY.toPx()).toInt()) }
-                            .size(plazaRadius * 2)
+                            .offset { IntOffset(verticalTextOffset.x.toInt(), verticalTextOffset.y.toInt()) }
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    verticalTextOffset = verticalTextOffset.copy(
+                                        x = verticalTextOffset.x + dragAmount.x,
+                                        y = verticalTextOffset.y + dragAmount.y
+                                    )
+                                }
+                            }
                     ) {
+                        Column {
+                            "Entrada".forEach { char ->
+                                Text(text = char.toString())
+                            }
+                        }
+                    }
 
+                    // Añadir la puerta doble
+                    Box(
+                        modifier = Modifier
+                            .offset { IntOffset(additionalImageOffset.x.toInt(), additionalImageOffset.y.toInt()) }
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    additionalImageOffset = additionalImageOffset.copy(
+                                        x = additionalImageOffset.x + dragAmount.x,
+                                        y = additionalImageOffset.y + dragAmount.y
+                                    )
+                                }
+                            }
+                    ) {
                         Image(
-                            painter = painterResource(id = R.drawable.plaza_icon),
+                            painter = painterResource(id = R.drawable.puertadoble), // Reemplaza con el id de tu imagen
                             contentDescription = null,
-                            modifier = Modifier.size(plazaIconSize)
-                        )
-                        Text(
-                            text = "",
-                            modifier = Modifier.align(Alignment.Center),
-                            style = androidx.compose.material.MaterialTheme.typography.body1
+                            modifier = Modifier.size(70.dp) // Ajusta el tamaño según sea necesario
                         )
                     }
                 }
@@ -207,29 +249,5 @@ fun GalleryMapsScreen(
         } ?: run {
             Text(text = "Loading...", modifier = Modifier.padding(16.dp))
         }
-    }
-}
-
-private fun requestPermissionsAndStartScanning(
-    activity: Activity?,
-    requestPermissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, @JvmSuppressWildcards Boolean>>,
-    viewModel: GalleryMapsViewModel
-) {
-    val permissions = listOf(
-        Manifest.permission.BLUETOOTH,
-        Manifest.permission.BLUETOOTH_ADMIN,
-        Manifest.permission.BLUETOOTH_SCAN,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    )
-
-    val permissionsToRequest = permissions.filter {
-        ContextCompat.checkSelfPermission(activity!!, it) != PackageManager.PERMISSION_GRANTED
-    }
-
-    if (permissionsToRequest.isNotEmpty()) {
-        requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
-    } else {
-
     }
 }

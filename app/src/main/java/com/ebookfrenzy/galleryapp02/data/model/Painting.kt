@@ -5,5 +5,6 @@ data class Painting(
     val title: String = "",
     val artist: String = "",
     val imageUrl: String = "",
-    val audioUrl: String = ""
+    val audioUrl: String = "",
+    val description: String = ""
 )

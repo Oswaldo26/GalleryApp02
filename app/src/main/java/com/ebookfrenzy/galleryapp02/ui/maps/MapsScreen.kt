@@ -1,5 +1,7 @@
 package com.ebookfrenzy.galleryapp02.ui.maps
 
+
+
 import android.Manifest
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
@@ -19,6 +21,7 @@ import com.google.maps.android.compose.MapProperties
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.CameraUpdateFactory
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -48,13 +51,19 @@ fun MapsScreen(viewModel: MapViewModel = hiltViewModel()) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (multiplePermissionsState.allPermissionsGranted) {
                 location?.let { loc ->
-                    val cameraPositionState = rememberCameraPositionState {
-                        // Calcula los límites para ambos puntos
+                    val cameraPositionState = rememberCameraPositionState()
+
+                    LaunchedEffect(Unit) {
+                        // Calcula los límites para los puntos de interés
                         val bounds = LatLngBounds.Builder()
                             .include(viewModel.pointA)
                             .include(viewModel.pointB)
+                            .include(viewModel.pointC)
+                            .include(LatLng(loc.latitude, loc.longitude))
                             .build()
-                        position = CameraPosition.fromLatLngZoom(bounds.center, 4f)
+
+                        // Mueve la cámara para mostrar todos los puntos de interés
+                        cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(bounds, 150))
                     }
 
                     GoogleMap(
