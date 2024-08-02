@@ -1,8 +1,8 @@
 package com.ebookfrenzy.galleryapp02.ui.room
 
+
+
 import androidx.compose.ui.Alignment
-
-
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
@@ -16,18 +16,16 @@ import coil.compose.AsyncImage
 @Composable
 fun RoomPaintingDetailScreen(imageUrl: String) {
     Scaffold {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(modifier = Modifier.padding(16.dp)) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(400.dp)
+                        .weight(1f) // This will make the image take most of the screen
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Aquí puedes añadir más detalles sobre la pintura si es necesario
-                //Text(text = painting.description, style = androidx.compose.material.MaterialTheme.typography.body1)
 
             }
         }

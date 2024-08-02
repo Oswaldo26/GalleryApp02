@@ -83,6 +83,10 @@ fun GalleryMapsScreen(
     var verticalTextOffset by remember { mutableStateOf(Offset(50f, 1300f)) }
     // Variable para mover la puerta doble
     var additionalImageOffset by remember { mutableStateOf(Offset(100f, 1350f)) }
+    // Variable para mover el cuadrado adicional
+    var additionalSquareOffset by remember { mutableStateOf(Offset(690f, 1250f)) }
+    // Variable para mover el ícono adicional
+    var additionalIconOffset by remember { mutableStateOf(Offset(780f, 1300f)) }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -242,6 +246,50 @@ fun GalleryMapsScreen(
                             painter = painterResource(id = R.drawable.puertadoble), // Reemplaza con el id de tu imagen
                             contentDescription = null,
                             modifier = Modifier.size(70.dp) // Ajusta el tamaño según sea necesario
+                        )
+                    }
+
+                    // Cuadrado adicional SSHH
+                    Box(
+                        modifier = Modifier
+                            .offset { IntOffset(additionalSquareOffset.x.toInt(), additionalSquareOffset.y.toInt()) }
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    additionalSquareOffset = additionalSquareOffset.copy(
+                                        x = additionalSquareOffset.x + dragAmount.x,
+                                        y = additionalSquareOffset.y + dragAmount.y
+                                    )
+                                }
+                            }
+                    ) {
+                        Canvas(modifier = Modifier.size(60.dp, 60.dp)) { // Ajusta el tamaño del nuevo cuadrado
+                            drawRect(
+                                color = Color.Black,
+                                size = Size(100.dp.toPx(), 50.dp.toPx()), // Ajusta el tamaño del nuevo cuadrado
+                                style = Stroke(width = 1f)
+                            )
+                        }
+                    }
+
+                    // Añadir ícono adicional que se puede mover
+                    Box(
+                        modifier = Modifier
+                            .offset { IntOffset(additionalIconOffset.x.toInt(), additionalIconOffset.y.toInt()) }
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    additionalIconOffset = additionalIconOffset.copy(
+                                        x = additionalIconOffset.x + dragAmount.x,
+                                        y = additionalIconOffset.y + dragAmount.y
+                                    )
+                                }
+                            }
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.bano), // Reemplaza con el id de tu ícono
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp) // Ajusta el tamaño según sea necesario
                         )
                     }
                 }
