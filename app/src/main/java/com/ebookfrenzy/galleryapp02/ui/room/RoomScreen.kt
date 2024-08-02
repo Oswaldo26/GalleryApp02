@@ -15,6 +15,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -32,9 +33,11 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.toSize
+import androidx.navigation.NavController
 
 @Composable
 fun RoomScreen(
+    navController: NavController,
     roomId: String,
     roomHeightMeters: Float = 6f, // Altura de la habitación en metros
     roomWidthMeters: Float = 5f, // Ancho de la habitación en metros
@@ -105,7 +108,8 @@ fun RoomScreen(
                             imageUrl = imageUrl,
                             position = Offset(offsetX * 100, offsetY * 100), // Convertir metros a unidades canvas
                             size = circleDiameter.dp,
-                            title = it.name // Pasar el nombre de la pintura como título
+                            title = it.name,
+                            navController = navController// Pasar el nombre de la pintura como título
                         )
                     }
                 }
@@ -135,11 +139,15 @@ fun RoomScreen(
 }
 
 @Composable
-fun ImageWithOffset(imageUrl: String, position: Offset, size: Dp, title: String) {
+fun ImageWithOffset(imageUrl: String, position: Offset, size: Dp, title: String,navController: NavController) {
     Column(
         modifier = Modifier
             .offset { IntOffset(position.x.toInt(), position.y.toInt()) }
             .size(size)
+            .clickable {
+                navController.currentBackStackEntry?.savedStateHandle?.set("imageUrl", imageUrl)
+                navController.navigate("roomPaintingDetail")
+            }
     ) {
         AsyncImage(
             model = imageUrl,

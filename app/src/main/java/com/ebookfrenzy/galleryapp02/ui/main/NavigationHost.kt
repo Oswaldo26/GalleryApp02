@@ -1,7 +1,6 @@
 package com.ebookfrenzy.galleryapp02.ui.main
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +12,7 @@ import com.ebookfrenzy.galleryapp02.ui.painting.PaintingScreen
 import com.ebookfrenzy.galleryapp02.ui.qr.QrResultScreen
 import com.ebookfrenzy.galleryapp02.ui.room.RoomScreen
 import com.ebookfrenzy.galleryapp02.ui.qr.ScanQrScreen
+import com.ebookfrenzy.galleryapp02.ui.room.RoomPaintingDetailScreen
 
 
 @Composable
@@ -26,15 +26,19 @@ fun NavigationHost(navController: NavHostController) {
         composable(BottomNavItem.Gallery.route) { GalleryScreen() }
         composable(BottomNavItem.Maps.route){ MapsScreen() }
         composable(BottomNavItem.ScanQr.route){ ScanQrScreen(navController) }
-        composable(BottomNavItem.Room.route) { RoomScreen(roomId = "") }
+        composable(BottomNavItem.Room.route) { RoomScreen(navController, roomId = "") }
         composable("room/{roomId}") { backStackEntry ->
             val roomId = backStackEntry.arguments?.getString("roomId")
-            roomId?.let { RoomScreen(roomId = it) }
+            roomId?.let { RoomScreen(navController, roomId = it) }
         }
         composable(BottomNavItem.Painting.route) { PaintingScreen(navController) }
         composable("paintingDetail/{paintingId}") { backStackEntry ->
             val paintingId = backStackEntry.arguments?.getString("paintingId")
             paintingId?.let { PaintingDetailScreen(paintingId = it) }
+        }
+        composable("roomPaintingDetail") { backStackEntry ->
+            val imageUrl = navController.previousBackStackEntry?.savedStateHandle?.get<String>("imageUrl")
+            imageUrl?.let { RoomPaintingDetailScreen(it) }
         }
 
         composable("qrResult/{paintingId}") { backStackEntry ->

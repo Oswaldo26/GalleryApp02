@@ -8,5 +8,6 @@ data class RoomModel(
     val name: String = "",
     val imageUrls: List<String> = emptyList(), // Añade esta línea
     val sections: Map<String, Section> = emptyMap(),
-    val description: String = ""
+    val description: String = "",
+    val paintings: List<Painting> = emptyList(), // Añade esta línea
 )
